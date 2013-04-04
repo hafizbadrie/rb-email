@@ -15,9 +15,16 @@ class Email
 	def initialize
 	end
 
-	def prepare(to, subject, body)
-		@from = 'no-reply@clodeo.com'
-		@password = 'Noreply2012'
+	def prepare(engine, to, subject, body)
+		@email_engine = engine
+		case @email_engine
+			when 'cardtopost'
+				@from = 'noreply@cardtopost.com'
+				@password = 'Noreply2013'
+			else
+				@from = 'no-reply@clodeo.com'
+				@password = 'Noreply2012'
+			end
 		@to = to
 		@subject = subject
 
@@ -32,8 +39,8 @@ Subject: #{@subject}
 EOF
 	end
 
-	def send_email(to, subject, body)
-		prepare(to, subject, body)
+	def send_email(engine, to, subject, body)
+		prepare(engine, to, subject, body)
 
 		Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE)  
 		Net::SMTP.start('smtp.gmail.com', 587, 'gmail.com', @from, @password, :login) do |smtp| 
@@ -52,7 +59,8 @@ EventMachine.run do
     exchange = channel.default_exchange
 
     queue.subscribe do |payload|
+    	puts "Received a message: #{payload}"
     	settings = JSON.parse(payload)
-    	email_sender.send_email(settings[:to], settings[:subject], settings[:body])
+    	email_sender.send_email(settings["engine"], settings["to"], settings["subject"], settings["body"])
     end
 end
