@@ -1,7 +1,11 @@
+require 'eventmachine'
+require 'amqp'
 require 'tlsmail'
+require 'json'
 
 class Email
 	#class property
+	@email_engine
 	@from
 	@password
 	@to
@@ -38,5 +42,17 @@ EOF
 	end
 end
 
-email_sender = Email.new
-email_sender.send_email('hafizbadrie@gmail.com', 'Test Ruby Email Class', '<h1>This is cool bro!</h1><br>Now you can see it in HTML.')
+EventMachine.run do
+    connection = AMQP.connect(:host => '127.0.0.1')
+    email_sender = Email.new
+    puts "Connecting to AMQP broker. Running #{AMQP::VERSION} version of the gem..."
+
+    channel  = AMQP::Channel.new(connection)
+    queue    = channel.queue("nodes.rb_email", :auto_delete => true)
+    exchange = channel.default_exchange
+
+    queue.subscribe do |payload|
+    	settings = JSON.parse(payload)
+    	email_sender.send_email(settings[:to], settings[:subject], settings[:body])
+    end
+end
