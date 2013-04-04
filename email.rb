@@ -20,10 +20,10 @@ class Email
 		case @email_engine
 			when 'cardtopost'
 				@from = 'noreply@cardtopost.com'
-				@password = 'Noreply2013'
+				@password = '#####'
 			else
 				@from = 'no-reply@clodeo.com'
-				@password = 'Noreply2012'
+				@password = '#####'
 			end
 		@to = to
 		@subject = subject
