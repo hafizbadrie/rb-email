@@ -1,5 +1,3 @@
-require 'eventmachine'
-require 'amqp'
 require 'tlsmail'
 require 'json'
 
@@ -20,10 +18,10 @@ class Email
 		case @email_engine
 			when 'cardtopost'
 				@from = 'noreply@cardtopost.com'
-				@password = '#####'
+				@password = 'No-reply2013'
 			else
 				@from = 'no-reply@clodeo.com'
-				@password = '#####'
+				@password = 'Noreply2012'
 			end
 		@to = to
 		@subject = subject
@@ -42,28 +40,9 @@ EOF
 	def send_email(engine, to, subject, body)
 		prepare(engine, to, subject, body)
 
-		puts @email_engine
-
 		Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE)  
 		Net::SMTP.start('smtp.gmail.com', 587, 'gmail.com', @from, @password, :login) do |smtp| 
 		  smtp.send_message(@body, @from, @to)
 		end
 	end
-end
-
-EventMachine.run do
-    connection = AMQP.connect(:host => '127.0.0.1', :vhost => '/')
-    email_sender = Email.new
-    puts "Connecting to AMQP broker. Running #{AMQP::VERSION} version of the gem..."
-
-    channel  = AMQP::Channel.new(connection)
-    exchange = channel.fanout("nodes.fanout")
-    queue    = channel.queue("nodes.rb_email", :auto_delete => true).bind(exchange)
-
-    queue.subscribe do |payload|
-    	puts "Received a message: #{payload}"
-    	settings = JSON.parse(payload)
-    	puts "ENGINE : " + settings["engine"]
-    	email_sender.send_email(settings["engine"], settings["to"], settings["subject"], settings["body"])
-    end
 end
